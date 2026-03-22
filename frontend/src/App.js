@@ -15,6 +15,7 @@ const STOCKS = [
 ];
 
 function App() {
+  const apiBaseUrl = (process.env.REACT_APP_API_URL || "http://127.0.0.1:5000").replace(/\/$/, "");
   const [selectedStock, setSelectedStock] = useState("AAPL");
   const [customStock, setCustomStock] = useState("");
   const [data, setData] = useState(null);
@@ -60,7 +61,7 @@ function App() {
     setData(null);
 
     try {
-      const res = await fetch("https://stock-prediction-gunicorn.onrender.com", {
+      const res = await fetch(`${apiBaseUrl}/predict`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -70,13 +71,13 @@ function App() {
 
       const result = await res.json();
 
-      if (result.predicted_price) {
+      if (res.ok && result.predicted_price != null) {
         setData(result);
       } else {
-        alert(result.error);
+        alert(result.error || "Prediction failed");
       }
     } catch (err) {
-      alert("Server error");
+      alert("Server error or backend unreachable");
     }
 
     setLoading(false);

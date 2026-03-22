@@ -1,5 +1,6 @@
 import numpy as np
 import yfinance as yf
+from pathlib import Path
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Dense
@@ -20,41 +21,44 @@ Dense.__init__ = _patched_dense_init
 # Now we can load the model normally without custom_objects!
 model = None
 
+MODEL_PATH = Path(__file__).resolve().parent / "lstm_stock_model.keras"
+
 def load_my_model():
     global model
     if model is None:
-        # from tensorflow.keras.models import load_model
-        model = load_model("lstm_stock_model.keras", compile=False)
+        model = load_model(MODEL_PATH, compile=False)
     return model
 
 scaler = MinMaxScaler(feature_range=(0, 1))
 
 def get_prediction(stock_symbol):
-    data = yf.download(stock_symbol, period="3mo")
-
-    if data.empty:
+    stock_symbol = str(stock_symbol).strip().upper()
+    if not stock_symbol:
         return None
 
-    close_prices = data[['Close']]
+    try:
+        data = yf.download(stock_symbol, period="6mo", progress=False, auto_adjust=True)
+    except Exception:
+        return None
 
-    # Current price
-    current_price = float(close_prices.iloc[-1][0])
+    if data.empty or "Close" not in data.columns:
+        return None
 
-    # Normalize
+    close_prices = data[["Close"]].dropna()
+    if len(close_prices) < 60:
+        return None
+
+    current_price = float(close_prices.iloc[-1, 0])
     scaled_data = scaler.fit_transform(close_prices)
-
-    # Last 60 days
     last_60 = scaled_data[-60:]
     X_test = np.reshape(last_60, (1, 60, 1))
 
-    # Predict
     model = load_my_model()
-    predicted_price = model.predict(X_test)
+
+    predicted_price = model.predict(X_test, verbose=0)
     predicted_price = scaler.inverse_transform(predicted_price)
 
     predicted_price = float(predicted_price[0][0])
-
-    # % change
     change_percent = ((predicted_price - current_price) / current_price) * 100
 
     return {

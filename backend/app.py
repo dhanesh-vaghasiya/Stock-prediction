@@ -1,43 +1,43 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from utils import get_prediction
 import os
+
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+from utils import get_prediction
 
 app = Flask(__name__)
 
-# ✅ Enable CORS (important for frontend communication)
-CORS(app)
+frontend_origins = os.environ.get("FRONTEND_ORIGIN", "http://localhost:3000")
+origin_list = [origin.strip() for origin in frontend_origins.split(",") if origin.strip()]
+CORS(app, origins=origin_list)
 
 
 @app.route("/")
 def home():
-    return "Stock Prediction API Running 🚀"
+    return jsonify({"status": "ok", "message": "Stock Prediction API Running"})
 
 
-@app.route("/predict", methods=["POST"])
-def predict():
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
+
+def predict_response():
+    data = request.get_json(silent=True)
+    if not data or "stock" not in data:
+        return jsonify({"error": "Stock symbol required"}), 400
+    stock = str(data.get("stock", "")).strip()
+    
     try:
-        data = request.get_json()
-
-        # Validate input
-        if not data or "stock" not in data:
-            return jsonify({"error": "Stock symbol required"}), 400
-
-        stock = data.get("stock")
-
-        # Call prediction function
         result = get_prediction(stock)
-
         if result is None:
-            return jsonify({"error": "Invalid stock symbol"}), 400
-
+            return jsonify({"error": "Invalid stock symbol or insufficient market data"}), 400
         return jsonify({
             "stock": stock,
             "current_price": result["current_price"],
             "predicted_price": result["predicted_price"],
             "change_percent": result["change_percent"]
         })
-
     except Exception as e:
         # Debugging support
         return jsonify({
@@ -46,8 +46,12 @@ def predict():
         }), 500
 
 
-import os
+@app.route("/", methods=["POST"])
+@app.route("/predict", methods=["POST"])
+def predict():
+    return predict_response()
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # ⚠️ use 10000 default
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
