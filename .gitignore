@@ -6,8 +6,7 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-*.keras
-*.h5
+
 models/
 data/
 notebooks/
