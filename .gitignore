@@ -1,0 +1,35 @@
+# Python/Flask/ML
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.keras
+*.h5
+models/
+data/
+notebooks/
+.DS_Store
+
+# React/Node
+node_modules/
+build/
+dist/
+*.log
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
