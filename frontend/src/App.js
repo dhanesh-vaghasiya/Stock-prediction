@@ -60,7 +60,7 @@ function App() {
     setData(null);
 
     try {
-      const res = await fetch("https://stock-prediction-46fi.onrender.com/", {
+      const res = await fetch("https://stock-prediction-gunicorn.onrender.com", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
